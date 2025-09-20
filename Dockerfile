@@ -63,7 +63,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # Compilar e instalar todas las dependencias de FFmpeg desde el código fuente
-# Se combinan en una sola capa para optimizar el tamaño.
 RUN git clone https://github.com/mstorsjo/fdk-aac.git && \
     cd fdk-aac && autoreconf -fiv && ./configure && make -j$(nproc) && make install && cd .. && rm -rf fdk-aac && \
     \
@@ -107,6 +106,12 @@ RUN git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg && \
 # Construimos la imagen final, que es mucho más ligera.
 # =============================================================================
 FROM python:3.9-slim
+
+# =========== AÑADE ESTAS DOS LÍNEAS AQUÍ ===========
+# "Hornea" la variable de entorno en la imagen durante la construcción.
+ARG LOCAL_STORAGE_PATH
+ENV LOCAL_STORAGE_PATH=${LOCAL_STORAGE_PATH}
+# ======================================================
 
 # Instalar solo las dependencias de EJECUCIÓN necesarias + gosu para manejo de permisos
 RUN apt-get update && apt-get install -y --no-install-recommends \
