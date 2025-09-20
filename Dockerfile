@@ -107,11 +107,9 @@ RUN git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg && \
 # =============================================================================
 FROM python:3.9-slim
 
-# =========== AÑADE ESTAS DOS LÍNEAS AQUÍ ===========
 # "Hornea" la variable de entorno en la imagen durante la construcción.
 ARG LOCAL_STORAGE_PATH
 ENV LOCAL_STORAGE_PATH=${LOCAL_STORAGE_PATH}
-# ======================================================
 
 # Instalar solo las dependencias de EJECUCIÓN necesarias + gosu para manejo de permisos
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -162,6 +160,11 @@ USER root
 
 # Copiar el resto del código de la aplicación, asignando propiedad a appuser
 COPY --chown=appuser:appuser . .
+
+# =========== AÑADE ESTA LÍNEA AQUÍ ===========
+# Forzar el permiso de ejecución para el script, independientemente de Git
+RUN chmod +x ./run_gunicorn.sh
+# =================================================
 
 # Exponer el puerto de la aplicación
 EXPOSE 8080
