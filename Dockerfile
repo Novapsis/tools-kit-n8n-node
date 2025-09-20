@@ -108,11 +108,12 @@ RUN git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg && \
 # =============================================================================
 FROM python:3.9-slim
 
-# Instalar solo las dependencias de EJECUCIÓN necesarias
+# Instalar solo las dependencias de EJECUCIÓN necesarias + gosu para manejo de permisos
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
     fontconfig \
+    gosu \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -145,17 +146,17 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Crear usuario no-root por seguridad
 RUN useradd --create-home --shell /bin/bash appuser
-USER appuser
 
-# Descargar el modelo de Whisper y el navegador Playwright como el usuario final
+# Descargar el modelo de Whisper y el navegador Playwright
 ENV WHISPER_CACHE_DIR="/home/appuser/.cache/whisper"
+RUN mkdir -p ${WHISPER_CACHE_DIR} && chown -R appuser:appuser /home/appuser
+USER appuser
 RUN python -c "import whisper; whisper.load_model('base')"
 RUN playwright install chromium
-
-# Copiar el resto del código de la aplicación
 USER root
+
+# Copiar el resto del código de la aplicación, asignando propiedad a appuser
 COPY --chown=appuser:appuser . .
-USER appuser
 
 # Exponer el puerto de la aplicación
 EXPOSE 8080
@@ -163,5 +164,5 @@ EXPOSE 8080
 # Establecer la variable de entorno
 ENV PYTHONUNBUFFERED=1
 
-# El script de ejecución ahora se copia, no se crea aquí
+# El CMD se ejecutará como root, y el script se encargará de cambiar a 'appuser'
 CMD ["./run_gunicorn.sh"]
